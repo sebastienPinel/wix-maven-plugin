@@ -26,6 +26,7 @@
           <goal>lit</goal>
           <goal>patch</goal>
           <goal>transform</goal>
+          <goal>harvest</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

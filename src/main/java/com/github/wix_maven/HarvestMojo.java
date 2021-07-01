@@ -16,7 +16,6 @@ package com.github.wix_maven;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
@@ -34,9 +33,8 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 /***
- * Generates WiX authoring from various input formats.
- * 
- * Every time heat is run it regenerates the output file and any changes are lost.
+ * Generates WiX authoring from various input formats. Every time heat is run it regenerates the
+ * output file and any changes are lost.
  */
 @Mojo(name = "harvest", defaultPhase = LifecyclePhase.GENERATE_SOURCES,
     requiresDependencyResolution = ResolutionScope.COMPILE)
@@ -82,7 +80,6 @@ public class HarvestMojo extends AbstractPackageable {
 
   /**
    * Heat supports the harvesting types:
-   * 
    * <table summary="">
    * <tr>
    * <th>Harvest Type</th>
@@ -116,11 +113,17 @@ public class HarvestMojo extends AbstractPackageable {
    */
   @Parameter
   String harvestType;
+
   public final static String HT_DIR = "dir";
+
   public final static String HT_FILE = "file";
+
   public final static String HT_PROJECT = "project";
+
   public final static String HT_WEBSITE = "website";
+
   public final static String HT_PERFORMANCE = "perf";
+
   public final static String HT_REGISTRY = "reg";
 
   /**
@@ -149,6 +152,7 @@ public class HarvestMojo extends AbstractPackageable {
    **/
   @Parameter(defaultValue = "")
   String harvestSourceVar;
+
   /**
    * Generate harvestSourceVar based on harvest id
    */
@@ -199,6 +203,24 @@ public class HarvestMojo extends AbstractPackageable {
   protected boolean harvestSuppressRootDirectoryElement;
 
   /**
+   * Suppress generation of fragments for directories and components.. Setting to true [-sfrag]
+   */
+  @Parameter(defaultValue = "false")
+  protected boolean harvestSuppressGenerationFragment;
+
+  /**
+   * Suppress COM elements.. Setting to true [-scom]
+   */
+  @Parameter(defaultValue = "false")
+  protected boolean harvestSuppressCOMElements;
+
+  /**
+   * Suppress registry harvesting. Setting to true [-sreg]
+   */
+  @Parameter(defaultValue = "false")
+  protected boolean harvestSuppressRegistryHarvesting;
+
+  /**
    * Use template, [-template] one of:
    * <ul>
    * <li>fragment
@@ -209,24 +231,46 @@ public class HarvestMojo extends AbstractPackageable {
   @Parameter(defaultValue = "fragment")
   protected String harvestTemplate;
 
+  /**
+   * Transformation file, [-t] flag
+   */
+  @Parameter(defaultValue = "")
+  protected String harvestTransform;
+
   // public final String HT_FRAGMENT="fragment";
   // public final String HT_MODULE="module";
   // public final String HT_PRODUCT="product";
 
   protected void addToolsetOptions(Commandline cl) {
-    if (generateComponentGUIDs)
+    if (generateComponentGUIDs) {
       cl.addArguments(new String[] {"-gg"});
-    else
+    } else {
       cl.addArguments(new String[] {"-ag"});
+    }
 
-    if (!generateGUIDBrackets)
+    if (!generateGUIDBrackets) {
       cl.addArguments(new String[] {"-g1"});
+    }
 
-    if (harvestKeepEmpty)
+    if (harvestKeepEmpty) {
       cl.addArguments(new String[] {"-ke"});
+    }
 
-    if (harvestSuppressRootDirectoryElement)
+    if (harvestSuppressRootDirectoryElement) {
       cl.addArguments(new String[] {"-srd"});
+    }
+
+    if (harvestSuppressGenerationFragment) {
+      cl.addArguments(new String[] {"-sfrag"});
+    }
+
+    if (harvestSuppressRegistryHarvesting) {
+      cl.addArguments(new String[] {"-sreg"});
+    }
+
+    if (harvestSuppressRegistryHarvesting) {
+      cl.addArguments(new String[] {"-scom"});
+    }
 
     // warning HEAT1108 : The command line switch 'template:' is deprecated. Please use 'template'
     // instead
@@ -235,13 +279,20 @@ public class HarvestMojo extends AbstractPackageable {
     cl.addArguments(new String[] {"-template", harvestTemplate});
     cl.addArguments(new String[] {"-generate", harvestGenerate});
 
-    if (StringUtils.isNotEmpty(harvestDirectoryRef))
-      cl.addArguments(new String[] {"-dr", harvestDirectoryRef});
-    if (StringUtils.isNotEmpty(harvestDirectoryid))
-      cl.addArguments(new String[] {"-directoryid", harvestDirectoryid});
+    if (StringUtils.isNotEmpty(harvestTransform)) {
+      cl.addArguments(new String[] {"-t", harvestTransform});
+    }
 
-    if (generateBinderVariables)
+    if (StringUtils.isNotEmpty(harvestDirectoryRef)) {
+      cl.addArguments(new String[] {"-dr", harvestDirectoryRef});
+    }
+    if (StringUtils.isNotEmpty(harvestDirectoryid)) {
+      cl.addArguments(new String[] {"-directoryid", harvestDirectoryid});
+    }
+
+    if (generateBinderVariables) {
       cl.addArguments(new String[] {"-wixvar"});
+    }
   }
 
   public void multiHeat(File heatTool, String harvestType, File harvest)
@@ -290,7 +341,6 @@ public class HarvestMojo extends AbstractPackageable {
     return harvestType + "_" + harvest.getName();
   }
 
-
   protected void heat(Commandline cl) throws MojoExecutionException {
     try {
       if (verbose) {
@@ -302,6 +352,7 @@ public class HarvestMojo extends AbstractPackageable {
       // TODO: maybe should report or do something with return value.
       int returnValue = CommandLineUtils.executeCommandLine(cl, new StreamConsumer() {
 
+        @Override
         public void consumeLine(final String line) {
           if (line.contains(" : error ")) {
             getLog().error(line);
@@ -316,6 +367,7 @@ public class HarvestMojo extends AbstractPackageable {
 
       }, new StreamConsumer() {
 
+        @Override
         public void consumeLine(final String line) {
           getLog().error(line);
         }
@@ -332,24 +384,28 @@ public class HarvestMojo extends AbstractPackageable {
     }
   }
 
+  @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
     if (skip) {
-      if (verbose)
+      if (verbose) {
         getLog().info(getClass().getName() + " skipped");
+      }
       return;
     }
     if (!harvestInputDirectory.exists()) {
-      if (verbose)
+      if (verbose) {
         getLog().info(
             "Skipping executing heat\nInput doesn't exist "
                 + harvestInputDirectory.getAbsolutePath());
+      }
       return;
     }
 
     File heatTool = new File(toolDirectory, "bin/heat.exe");
-    if (!heatTool.exists())
+    if (!heatTool.exists()) {
       throw new MojoExecutionException("Heat tool doesn't exist " + heatTool.getAbsolutePath());
+    }
 
     // Heat requires side by side install of wixext even if unused?
     Set<Artifact> dependentExtensions = getExtDependencySets();
@@ -390,15 +446,16 @@ public class HarvestMojo extends AbstractPackageable {
           "Problem executing heat\nUnable to find dependent extension WixVSExtension");
     }
 
-
-    if (!wxsGeneratedDirectory.exists())
+    if (!wxsGeneratedDirectory.exists()) {
       wxsGeneratedDirectory.mkdirs();
+    }
 
     if (StringUtils.isNotEmpty(harvestType)) {
       multiHeat(heatTool, harvestType, harvestInputDirectory);
     } else {
 
       FileFilter directoryFilter = new FileFilter() {
+        @Override
         public boolean accept(File file) {
           return file.isDirectory();
         }
